@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <title>I love youuu - Web</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --pink: #ee799f;
+      --red: #dc143c;
+      --green: #00b400;
+      --text: rgb(205, 16, 118);
+      --bg: rgb(238, 121, 159);
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; font-family: Arial, sans-serif; font-weight: bold; background: #fff; color: var(--text); }
+    #stage {
+      width: 100%;
+      height: 100vh;
+      display: grid;
+      place-items: center;
+      background: rgb(238, 121, 159);
+      overflow: hidden;
+    }
+    #canvas {
+      width: min(92vw, 800px);
+      height: auto;
+      aspect-ratio: 4 / 3; /* giữ tỉ lệ khi thay đổi kích thước */
+      max-width: 800px;
+      min-width: 320px;
+      background: rgb(238, 121, 159);
+      position: relative;
+      border: 0;
+      box-shadow: 0 0 0 rgba(0,0,0,.05);
+    }
+    .btn {
+      position: absolute;
+      width: 180px;
+      height: 60px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      user-select: none;
+      font-weight: bold;
+      color: rgb(205, 16, 118);
+      background: #fff;
+      border: 2px solid #e3e3e3;
+      touch-action: manipulation;
+    }
+    .btn:hover { filter: brightness(0.98); }
+    #haveBtn { color: rgb(205, 16, 118); background: #fff; border: 5px solid rgb(205, 16, 118); }
+    #noBtn { color: #fff; background: #000; border: 5px solid #e3e3e3; }
+
+    #message {
+      position: absolute;
+      top: 8%;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+      width: 100%;
+      font-size: 4vw;
+      max-font-size: 32px;
+      line-height: 1.4;
+      color: rgb(205, 16, 118);
+      padding: 0 10px;
+      pointer-events: none;
+    }
+
+    #thanksOverlay {
+      position: absolute;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgb(238, 121, 159);
+      text-align: center;
+      font-family: Arial, Bold;
+      font-size: 4vw;
+      padding: 20px;
+      color: #fff;
+    }
+    #thanksOverlay.active {
+      display: flex;
+    }
+
+    /* Responsive tweaks cho điện thoại */
+    @media (max-width: 600px) {
+      #message { font-size: 6vw; }
+      .btn { width: 44vw; height: 56px; font-size: 5vw; left: auto; right: auto; }
+      #haveBtn { left: 50%; transform: translateX(-50%); top: 60%; }
+      #noBtn   { left: 50%; transform: translateX(-50%); top: 72%; }
+    }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <div id="canvas" aria-label="Canvas tương tác">
+      <div id="message">Tui thích ní! Làm người yêuu tuii được hoggggg?</div>
+      <div id="haveBtn" class="btn" role="button" aria-label="Có">Cóoo</div>
+      <div id="noBtn" class="btn" role="button" aria-label="Không">hong=((</div>
+
+      <div id="thanksOverlay" aria-live="polite">uiii, đã quá! Lovee youuu, Bye nheee!!</div>
+    </div>
+  </div>
+
+  <script>
+    // Kết cấu tham chiếu từ mã Python sang JS
+    const canvas = document.getElementById('canvas');
+    const WIDTH = 800;
+    const HEIGHT = 600;
+
+    // Thông số nút - sẽ được điều chỉnh dựa trên kích thước thực tế
+    const haveBtn = {
+      el: document.getElementById('haveBtn'),
+      x: 0,
+      y: 0,
+      w: 180,
+      h: 60,
+      fontSize: 28
+    };
+
+    const noBtn = {
+      el: document.getElementById('noBtn'),
+      x: 0,
+      y: 0,
+      w: 180,
+      h: 60,
+      fontSize: 28
+    };
+
+    const messageEl = document.getElementById('message');
+    const thanksOverlay = document.getElementById('thanksOverlay');
+
+    let showThanks = false;
+
+    // Cập nhật vị trí nút dựa trên kích thước canvas thực tế
+    function layoutButtons() {
+      // cho PC: dùng vị trí dựa trên kích thước canvas hiện tại
+      const rect = canvas.getBoundingClientRect();
+      // Đánh dấu vị trí tương ứng theo tỉ lệ
+      // Đặt chữ số tương đối để dễ điều chỉnh
+      haveBtn.x = Math.max(20, Math.min(rect.width - haveBtn.w - 20, rect.width * 0.25));
+      haveBtn.y = Math.max(10, Math.min(rect.height - haveBtn.h - 10, rect.height * 0.7));
+
+      noBtn.x = Math.max(20, Math.min(rect.width - noBtn.w - 20, rect.width * 0.75 - noBtn.w));
+      noBtn.y = Math.max(10, Math.min(rect.height - noBtn.h - 10, rect.height * 0.7));
+
+      haveBtn.el.style.left = haveBtn.x + 'px';
+      haveBtn.el.style.top = haveBtn.y + 'px';
+      haveBtn.el.style.width = haveBtn.w + 'px';
+      haveBtn.el.style.height = haveBtn.h + 'px';
+      haveBtn.el.style.fontSize = haveBtn.fontSize + 'px';
+
+      noBtn.el.style.left = noBtn.x + 'px';
+      noBtn.el.style.top = noBtn.y + 'px';
+      noBtn.el.style.width = noBtn.w + 'px';
+      noBtn.el.style.height = noBtn.h + 'px';
+      noBtn.el.style.fontSize = noBtn.fontSize + 'px';
+    }
+
+    // Khoảng cách từ con trỏ đến tâm nút Không
+    function distToNoCenter(px, py) {
+      const cx = noBtn.x + noBtn.w / 2;
+      const cy = noBtn.y + noBtn.h / 2;
+      const dx = px - cx;
+      const dy = py - cy;
+      return Math.hypot(dx, dy);
+    }
+
+    // Xử lý move near
+    const NO_NEAR_RADIUS = 120;
+    function updateNearBehavior(mx, my) {
+      const centerDist = distToNoCenter(mx, my);
+      const near = centerDist < NO_NEAR_RADIUS;
+
+      if (near) {
+        // Đổi vị trí Nút Không
+        const margin = 20;
+        const rect = canvas.getBoundingClientRect();
+        // Tạo vị trí ngẫu nhiên trong phạm vi canvas
+        const newX = Math.floor(Math.random() * (rect.width - noBtn.w - margin * 2)) + margin;
+        const newY = Math.floor(Math.random() * (rect.height - noBtn.h - margin * 2)) + margin;
+        noBtn.x = newX;
+        noBtn.y = newY;
+
+        // Giảm kích thước của Nút Không
+        noBtn.w = Math.max(100, noBtn.w - 2);
+        noBtn.h = Math.max(40, noBtn.h - 2);
+
+        // Tăng kích thước của Nút Có
+        haveBtn.w = Math.min(rect.width, haveBtn.w + 3);
+        haveBtn.h = Math.min(rect.height, haveBtn.h + 2);
+      }
+    }
+
+    // Xử lý nhấp/chạm
+    function onClick(e) {
+      if (showThanks) return;
+      const rect = canvas.getBoundingClientRect();
+
+      // Lấy vị trí theo tọa độ trang
+      let px, py;
+      if (e.touches && e.touches.length) {
+        px = e.touches[0].clientX - rect.left;
+        py = e.touches[0].clientY - rect.top;
+      } else {
+        px = e.clientX - rect.left;
+        py = e.clientY - rect.top;
+      }
+
+      // Kiểm tra nhấn Have
+      if (px >= haveBtn.x && px <= haveBtn.x + haveBtn.w &&
+          py >= haveBtn.y && py <= haveBtn.y + haveBtn.h) {
+        showThanks = true;
+        thanksOverlay.style.display = 'flex';
+        // hiển thị cảm ơn và dừng
+        setTimeout(() => {
+          thanksOverlay.textContent = 'loveee youuuu ><';
+        }, 2000);
+        return;
+      }
+
+      // Không bắt sự kiện riêng cho No (chỉ để near di chuyển)
+    }
+
+    // Sự kiện di chuột/thật chạm
+    window.addEventListener('mousemove', (e) => {
+      if (showThanks) return;
+      const rect = canvas.getBoundingClientRect();
+      const mx = e.clientX - rect.left;
+      const my = e.clientY - rect.top;
+      updateNearBehavior(mx, my);
+      layoutButtons();
+    });
+
+    // Thêm touch events
+    window.addEventListener('touchmove', (e) => {
+      if (showThanks) return;
+      const t = e.touches[0];
+      const rect = canvas.getBoundingClientRect();
+      const mx = t.clientX - rect.left;
+      const my = t.clientY - rect.top;
+      updateNearBehavior(mx, my);
+      layoutButtons();
+    }, { passive: true });
+
+    window.addEventListener('mousedown', onClick);
+    window.addEventListener('touchstart', onClick);
+
+    // Khởi tạo lần đầu
+    function init() {
+      // Nếu kích thước ban đầu thay đổi (ví dụ xoay điện thoại hoặc resize máy tính)
+      const resizeObserver = new ResizeObserver(() => {
+        layoutButtons();
+      });
+      resizeObserver.observe(canvas);
+      layoutButtons();
+    }
+
+    init();
+  </script>
+</body>
+</html>

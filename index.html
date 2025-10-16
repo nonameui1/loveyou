@@ -1,93 +1,284 @@
-<!DOCTYPE html>  
-<html lang="en">  
-<head>  
-  <meta charset="UTF-8" />  
-  <title>Crush - Responsive Mobile Friendly</title>  
-  <meta name="viewport" content="width=device-width, initial-scale=1" />  
-  <style>  
-    html, body {  
-      margin: 0;  
-      height: 100%;  
-      background: #000;  
-      overflow: hidden;  
-    }  
-    #stage {  
-      display: block;  
-      width: 100%;  
-      height: 100%;  
-      touch-action: none; /* để tương tác mượt trên cảm ứng nếu cần */  
-    }  
-  </style>  
-</head>  
-<body>  
-  <canvas id="stage"></canvas>  
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Crush - Responsive HTML Version</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: #000;
+      overflow: hidden;
+    }
+    #stage {
+      display: block;
+      width: 100%;
+      height: 100%;
+      /* canvas sẽ tự co giãn theo màn hình, nhưng nội dung sẽ scale bằng script */
+    }
+  </style>
+</head>
+<body>
+  <canvas id="stage"></canvas>
 
-  <script>  
-    // Cấu hình gốc  
-    const BASE_W = 1300;  
-    const BASE_H = 800;  
+  <script>
+    // Thiết lập ban đầu
+    const BASE_W = 1300;
+    const BASE_H = 800;
 
-    const canvas = document.getElementById('stage');  
-    const ctx = canvas.getContext('2d');  
+    const canvas = document.getElementById('stage');
+    const ctx = canvas.getContext('2d');
 
-    // Biến dựng sẵn cho nội dung (sẽ được cập nhật theo scale)  
-    let WIDTH = BASE_W;  
-    let HEIGHT = BASE_H;  
-    let globalScale = 1;  
+    // Cấu hình fonts (sẽ được điều chỉnh theo kích thước màn hình)
+    let fontMain = "bold 80px Arial";
 
-    // Font tham khảo (sẽ điều chỉnh theo scale)  
-    let fontMain = "bold 48px Arial"; // default, sẽ cập nhật  
-    const logoFontFamily = "Courier New";  
+    // Lyrics dữ liệu
+    const lyrics = [
+      ["Gio nay mat troi cua em da la ai", 0.35, 0.8],
+      ["Vi gio nay trong trai tim em la anh", 0.3, 0.5],
+      ["Va roi nguoi co thay khong", 0.35, 0.5],
+      ["You are tired", 0.2, 0.6],
+      ["Sao cu quan quanh mai trong tam tri em", 0.33, 0.8],
+      ["Ke tu ngay anh den day tim em vun vo", 0.25, 0.7],
+      ["Chot nhiu lan om lay anh tinh giac lai mo", 0.25, 0.5],
+      ["Va roi nguoi co the cho", 0.3, 0.7],
+      ["Hay co thay gio", 0.1, 0.8],
+      ["Trai tim em lac roi noi nao", 0.3, 0.8],
+    ];
 
-    // Lyrics (dữ liệu) - vẫn giữ nguyên  
-    const lyrics = [  
-      ["Gio nay mat troi cua em da la ai", 0.35, 0.8],  
-      ["Vi gio nay trong trai tim em la anh", 0.3, 0.5],  
-      ["Va roi nguoi co thay khong", 0.35, 0.5],  
-      ["You are tired", 0.2, 0.6],  
-      ["Sao cu quan quanh mai trong tam tri em", 0.33, 0.8],  
-      ["Ke tu ngay anh den day tim em vun vo", 0.25, 0.7],  
-      ["Chot nhiu lan om lay anh tinh giac lai mo", 0.25, 0.5],  
-      ["Va roi nguoi co the cho", 0.3, 0.7],  
-      ["Hay co thay gio", 0.1, 0.8],  
-      ["Trai tim em lac roi noi nao", 0.3, 0.8],  
-    ];  
+    const BLACK = "#000000";
+    const WHITE = "#e6e6e6";
+    const LOGO_COLOR = "#b4b4b4";
+    const CIRCLE_COLORS = [
+      "rgba(255,255,255,0.31)",
+      "rgba(200,0,0,0.31)",
+      "rgba(150,150,150,0.31)"
+    ];
 
-    const BLACK = "#000000";  
-    const WHITE = "#e6e6e6";  
-    const LOGO_COLOR = "#b4b4b4";  
-    const CIRCLE_COLORS = [  
-      "rgba(255,255,255,0.31)",  
-      "rgba(200,0,0,0.31)",  
-      "rgba(150,150,150,0.31)"  
-    ];  
+    // NoiseSpot miễn phí
+    class NoiseSpot {
+      constructor() { this.reset(); }
+      reset() {
+        this.x = Math.floor(Math.random() * WIDTH);
+        this.y = Math.floor(Math.random() * HEIGHT);
+        this.size = Math.floor(Math.random() * 6) + 3;
+        const gray = Math.floor(Math.random() * 101) + 80;
+        this.color = `rgb(${gray},${gray},${gray})`;
+        this.lifetime = Math.random() * 0.3 + 0.3;
+        this.birth = performance.now() / 1000;
+      }
+      draw(ctx) {
+        const now = performance.now() / 1000;
+        if (now - this.birth > this.lifetime) this.reset();
+        ctx.fillStyle = this.color;
+        ctx.fillRect(this.x, this.y, this.size, this.size);
+      }
+    }
 
-    // NoiseSpot mô phỏng hiệu ứng điểm sáng ngẫu nhiên  
-    class NoiseSpot {  
-      constructor() { this.reset(); }  
-      reset() {  
-        this.x = Math.floor(Math.random() * WIDTH);  
-        this.y = Math.floor(Math.random() * HEIGHT);  
-        this.size = Math.floor(Math.random() * 6) + 3;  
-        const gray = Math.floor(Math.random() * 101) + 80;  
-        this.color = `rgb(${gray},${gray},${gray})`;  
-        this.lifetime = Math.random() * 0.3 + 0.3;  
-        this.birth = performance.now() / 1000;  
-      }  
-      draw(ctx) {  
-        const now = performance.now() / 1000;  
-        if (now - this.birth > this.lifetime) this.reset();  
-        ctx.fillStyle = this.color;  
-        ctx.fillRect(this.x, this.y, this.size, this.size);  
-      }  
-    }  
+    let WIDTH = BASE_W;
+    let HEIGHT = BASE_H;
 
-    const noises = Array.from({ length: 60 }, () => new NoiseSpot());  
-    const circles = [];  
+    // Các biến quản lý trạng thái
+    let lineIndex = 0;
+    let wordIndex = 0;
+    let lastWordTime = performance.now() / 1000;
+    let lastCircleTime = performance.now() / 1000;
 
-    // wrap_text với font hiện tại  
-    function wrapText(words, font, maxWidth) {  
-      ctx.font = font;  
-      const lines = [];  
-      let current = [];  
-      for (let w of words) {  
+    const noises = Array.from({ length: 60 }, () => new NoiseSpot());
+    const circles = [];
+
+    function wrapText(words, font, maxWidth) {
+      ctx.font = font;
+      const lines = [];
+      let current = [];
+      for (let w of words) {
+        const testLine = current.length ? current.join(' ') + ' ' + w : w;
+        const wpx = ctx.measureText(testLine).width;
+        if (wpx <= maxWidth) {
+          current.push(w);
+        } else {
+          lines.push(current);
+          current = [w];
+        }
+      }
+      if (current.length) lines.push(current);
+      return lines;
+    }
+
+    function addCircle() {
+      const x = WIDTH / 2;
+      const y = HEIGHT / 2;
+      const color = Math.floor(Math.random() * 3);
+      circles.push({ x, y, r: 0, color });
+    }
+
+    // Logo font cho màn hình càng lớn càng tốt
+    const logoFontFamily = "Courier New";
+
+    // Điều chỉnh kích thước và vị trí khi resize
+    function resize() {
+      // Sử dụng kích thước cửa sổ làm cơ sở
+      // Giữ tỉ lệ: scale so với BASE_W/BASE_H
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+
+      // Chọn tỷ lệ scale sao cho vừa khít khung hình mà vẫn giữ tỉ lệ
+      const scaleX = w / BASE_W;
+      const scaleY = h / BASE_H;
+      const scale = Math.max(0.5, Math.min(scaleX, scaleY)); // giới hạn để chữ vẫn nhìn được
+
+      // Cập nhật kích thước canvas và vị trí
+      WIDTH = Math.floor(BASE_W * scale);
+      HEIGHT = Math.floor(BASE_H * scale);
+      canvas.width = WIDTH;
+      canvas.height = HEIGHT;
+
+      // Cập nhật font dựa trên scale (đảm bảo chữ vừa mắt)
+      const baseFontSize = Math.max(28, Math.floor(80 * scale)); // tối thiểu 28px
+      fontMain = `bold ${baseFontSize}px Arial`;
+
+      // Logo size vừa với scale
+      // Để đơn giản, không thay đổi fontFamily, chỉ thay kích thước từ CSS-Canvas
+      // Các tham số khác có thể được tính dựa trên WIDTH/HEIGHT nếu cần
+
+      // Cập nhật vị trí các phần mềm hình ảnh khác nếu có
+    }
+
+    window.addEventListener('resize', resize);
+    // Khởi tạo lần đầu
+    resize();
+
+    // Scanlines
+    function drawScanlines(ctx) {
+      ctx.save();
+      for (let y = 0; y < HEIGHT; y += 4) {
+        ctx.strokeStyle = "rgba(0,0,0,0.0)"; // có thể bỏ nếu muốn có hiệu ứng nhẹ
+      }
+      ctx.restore();
+    }
+
+    // Main loop
+    let running = true;
+    let lastFrame = performance.now();
+    function loop() {
+      if (!running) return;
+      const now = performance.now();
+      const dt = (now - lastFrame) / 1000;
+      lastFrame = now;
+
+      update(dt);
+      render();
+
+      requestAnimationFrame(loop);
+    }
+
+    function update(dt) {
+      const currentTime = performance.now() / 1000;
+
+      // Lyrics progression
+      if (lineIndex < lyrics.length) {
+        const [line, wordDelay, lineDelay] = lyrics[lineIndex];
+        const words = line.split(" ");
+
+        if (currentTime - lastWordTime > wordDelay && wordIndex < words.length) {
+          wordIndex += 1;
+          lastWordTime = currentTime;
+        }
+
+        // Khi hoàn thành từ cho dòng hiện tại, chuyển sang dòng tiếp theo sau lineDelay
+        if (wordIndex === words.length) {
+          if (currentTime - lastWordTime > lineDelay) {
+            lineIndex += 1;
+            wordIndex = 0;
+            lastWordTime = currentTime;
+          }
+        }
+      }
+
+      // Thêm vòng tròn theo thời gian
+      if (currentTime - lastCircleTime > 0.6) {
+        addCircle();
+        lastCircleTime = currentTime;
+      }
+
+      // Cập nhật các vòng tròn
+      for (let i = circles.length - 1; i >= 0; i--) {
+        const c = circles[i];
+        c.r += 5;
+        if (c.r > 600) circles.splice(i, 1);
+      }
+    }
+
+    function render() {
+      // Nền đen
+      ctx.fillStyle = BLACK;
+      ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+      // Lyrics hiện tại
+      if (lineIndex < lyrics.length) {
+        const [line, wordDelay, lineDelay] = lyrics[lineIndex];
+        const words = line.split(" ");
+        const visibleWords = words.slice(0, wordIndex);
+
+        // Wrap và vẽ
+        const wrapped = wrapText(visibleWords, fontMain, WIDTH * 0.6);
+        const yStart = HEIGHT / 2;
+        ctx.font = fontMain;
+        ctx.textAlign = "center";
+        ctx.fillStyle = WHITE;
+
+        for (let row = 0; row < wrapped.length; row++) {
+          const lineWords = wrapped[row].join(' ');
+          const y = yStart + row * Math.max(60, Math.floor(fontMain.match(/\d+/)?.[0] || 60));
+          ctx.fillText(lineWords, WIDTH / 2, y);
+        }
+
+        // Chuyển sang dòng tiếp theo khi hoàn tất từ
+        if (wordIndex === words.length) {
+          if ((performance.now() / 1000) - lastWordTime > lineDelay) {
+            lineIndex += 1;
+            wordIndex = 0;
+            lastWordTime = performance.now() / 1000;
+          }
+        }
+      }
+
+      // Vòng tròn động
+      for (const c of circles) {
+        ctx.save();
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = CIRCLE_COLORS[c.color % CIRCLE_COLORS.length];
+        ctx.beginPath();
+        ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      // Logo dưới góc phải (tương tự Pygame)
+      ctx.save();
+      const logoFontSize = Math.max(12, Math.floor(20 * (WIDTH / BASE_W)));
+      ctx.font = `${logoFontSize}px "${logoFontFamily}"`;
+      ctx.fillStyle = LOGO_COLOR;
+      const logoText = "         hphuc ";
+      const x = WIDTH - Math.max(100, Math.floor(700 * (WIDTH / BASE_W)));
+      const y = HEIGHT - Math.max(5, Math.floor(15 * (HEIGHT / BASE_H)));
+      ctx.fillText(logoText, x, y);
+      ctx.restore();
+
+      // Noise spots
+      for (const n of noises) n.draw(ctx);
+
+      // Scanlines (đơn giản)
+      drawScanlines(ctx);
+    }
+
+    // Bắt đầu vòng lặp
+    loop();
+
+    // Clean up khi rời trang
+    window.addEventListener('beforeunload', () => { running = false; });
+
+  </script>
+</body>
+</html>

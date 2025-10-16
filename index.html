@@ -1,1003 +1,284 @@
 <!DOCTYPE html>
-
-<html lang="en"><head>
-
-<meta charset="UTF-8">
-
-<meta http-equiv="X-UA-Compatible" content="IE=edge">
-
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>I Love You</title>
-
-<style>
-
-*{
-
-margin: 0;
-
-padding: 0;
-
-box-sizing: border-box;
-
-}
-
-html,
-
-body {
-
-overflow: hidden;
-
-background-color: #000 !important;
-
-}
-
-body {
-
--webkit-font-soothing: antialiased;
-
-}
-
-.webgl {
-
-position: fixed;
-
-width: 100vw;
-
-height: 100vw;
-
-top: 0;
-
-left: 0;
-
-outline: none;
-
-}
-
-h1{
-
-position: absolute;
-
-top: 10vh;
-
-left: 2.5rem;
-
-right: 1rem;
-
-text-align: center;
-
-font-size: max(1rem, 3vh);
-
-}
-
-button {
-
-position: absolute;
-
-left: 0;
-
-top: 0;
-
-bottom: 0;
-
-height: 12vh;
-
-width: 12vh;
-
-transform: translateY(2vh);
-
-right: 0;
-
-margin: auto;
-
--webkit-appearance: none;
-
-background: transparent;
-
-color: inherit;
-
-border: none;
-
-cursor: pointer;
-
-}
-
-svg{
-
-width: 3.5vh;
-
-}
-
-</style>
-
-<script>
-
-window.console = window.console || function(t) {};
-
-</script>
-
-<script>
-
-if (document.location.search.match(/type=embed/gi)) {
-
-window.parent.postMessage("resize", "*");
-
-}
-
-</script>
-
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Ngu di em oi - Responsive HTML Version</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: #000;
+      overflow: hidden;
+    }
+    #stage {
+      display: block;
+      width: 100%;
+      height: 100%;
+      /* canvas sẽ tự co giãn theo màn hình, nhưng nội dung sẽ scale bằng script */
+    }
+  </style>
 </head>
-
-<body translate="no">
-
-<canvas class="webgl" data-engine="three.js r135" width="682" height="157" style="width: 682px; height: 157px;"></canvas>
-
-<button id="play-music" type="button" aria-label="Play music" style="opacity: 1;"><svg fill="currentColor" viewBox="0 0 512 512" width="100" title="music">
-
-<!-- <path d="M470.38 1.51L150.41 96A32 32 0 0 0 128 126.51v261.41A139 139 0 0 0 96 384c-53 0-96 28.66-96 64s43 64 96 64 96-28.66 96-64V214.32l256-75v184.61a138.4 138.4 0 0 0-32-3.93c-53 0-96 28.66-96 64s43 64 96 64 96-28.65 96-64V32a32 32 0 0 0-41.62-30.49z" /> -->
-
-</svg></button>
-
-<script type="x-shader/x-vertex" id="vertexShader">
-
-#define M_PI 3.1415926535897932384626433832795
-
-uniform float uTime;
-
-uniform float uSize;
-
-attribute float aScale;
-
-attribute vec3 aColor;
-
-attribute float random;
-
-attribute float random1;
-
-attribute float aSpeed;
-
-varying vec3 vColor;
-
-varying vec2 vUv;
-
-void main() {
-
-float sign = 2.0* (step(random, 0.5) -.5);
-
-float t = sign*mod(-uTime * aSpeed* 0.005 + 10.0*aSpeed*aSpeed, M_PI);
-
-float a = pow(t, 2.0) * pow((t - sign * M_PI), 2.0);
-
-float radius = 0.14;
-
-vec3 myOffset =
-
-vec3(t, 1.0, 0.0);
-
-myOffset = vec3(radius *16.0 * pow(sin(t), 2.0) * sin(t), radius * (13.0 * cos(t) - 5.0 * cos(2.0 * t) - 2.0 * cos(3.0 * t) - cos(4.0 * t)), .15*(a*(random1 - .5))*sin(abs(10.0*(sin(.2*uTime + .2*random)))*t));
-
-vec3 displacedPosition = myOffset;
-
-vec4 modelPosition = modelMatrix * vec4(displacedPosition.xyz, 1.0);
-
-vec4 viewPosition = viewMatrix * modelPosition;
-
-viewPosition.xyz += position * aScale * uSize * pow(a, .5) * .5;
-
-gl_Position = projectionMatrix * viewPosition;
-
-vColor = aColor;
-
-vUv = uv;
-
-}
-
-</script>
-
-<script type="x-shader/x-fragment" id="fragmentShader">
-
-varying vec3 vColor;
-
-varying vec2 vUv;
-
-void main() {
-
-vec2 uv = vUv;
-
-vec3 color = vColor;
-
-float strength = distance(uv, vec2(0.5));
-
-strength *= 2.0;
-
-strength = 1.0 - strength;
-
-gl_FragColor = vec4(strength * color, 1.0);
-
-}
-
-</script>
-
-<script type="x-shader/x-vertex" id="vertexShader1">
-
-#define M_PI 3.1415926535897932384626433832795
-
-uniform float uTime;
-
-uniform float uSize;
-
-attribute float aScale;
-
-attribute vec3 aColor;
-
-attribute float phi;
-
-attribute float random;
-
-attribute float random1;
-
-varying vec3 vColor;
-
-varying vec2 vUv;
-
-void main() {
-
-float t = 0.01 * uTime + 12.0;
-
-float angle = phi;
-
-t = mod((-uTime + 100.0) * 0.06* random1 + random *2.0 * M_PI , 2.0 * M_PI);
-
-vec3 myOffset = vec3(5.85*cos(angle * (t )), 2.0*(t - M_PI), 3.0*sin(angle * (t )/t));
-
-vec4 modelPosition = modelMatrix * vec4(myOffset, 1.0);
-
-vec4 viewPosition = viewMatrix * modelPosition;
-
-viewPosition.xyz += position * aScale * uSize;
-
-gl_Position = projectionMatrix * viewPosition;
-
-vColor = aColor;
-
-vUv = uv;
-
-}
-
-</script>
-
-<script type="x-shader/x-fragment" id="fragmentShader1">
-
-uniform sampler2D uTex;
-
-varying vec3 vColor;
-
-varying vec2 vUv;
-
-void main() {
-
-vec2 uv = vUv;
-
-vec3 color = vColor;
-
-float strength = distance(uv, vec2(0.5, .65));
-
-strength *= 2.0;
-
-strength = 1.0 - strength;
-
-vec3 texture = texture2D(uTex, uv).rgb;
-
-gl_FragColor = vec4(texture * color * (strength + .3), 1.);
-
-}
-
-</script>
-
-<script src="https://cpwebassets.codepen.io/assets/common/stopExecutionOnTimeout-2c7831bb44f98c1391d6a4ffda0e1fd302503391ca806e7fcc7b9b87197aec26.js"></script>
-
-<script id="rendered-js" type="module">
-
-/* Poly Heart model by Quaternius [CC0] (https://creativecommons.org/publicdomain/zero/1.0/) via Poly Pizza (https://poly.pizza/m/1yCRUwFnwX)
-
-*/
-
-import * as THREE from "https://cdn.skypack.dev/three@0.135.0";
-
-import { gsap } from "https://cdn.skypack.dev/gsap@3.8.0";
-
-import { GLTFLoader } from "https://cdn.skypack.dev/three@0.135.0/examples/jsm/loaders/GLTFLoader";
-
-class World {
-
-constructor({
-
-canvas,
-
-width,
-
-height,
-
-cameraPosition,
-
-fieldOfView = 75,
-
-nearPlane = 0.1,
-
-farPlane = 100 })
-
-{
-
-this.parameters = {
-
-count: 1500,
-
-max: 12.5 * Math.PI,
-
-a: 2,
-
-c: 4.5 };
-
-this.textureLoader = new THREE.TextureLoader();
-
-this.scene = new THREE.Scene();
-
-this.scene.background = new THREE.Color(0x16000a);
-
-this.clock = new THREE.Clock();
-
-this.data = 0;
-
-this.time = { current: 0, t0: 0, t1: 0, t: 0, frequency: 0.0005 };
-
-this.angle = { x: 0, z: 0 };
-
-this.width = width || window.innerWidth;
-
-this.height = height || window.innerHeight;
-
-this.aspectRatio = this.width / this.height;
-
-this.fieldOfView = fieldOfView;
-
-this.camera = new THREE.PerspectiveCamera(
-
-fieldOfView,
-
-this.aspectRatio,
-
-nearPlane,
-
-farPlane);
-
-this.camera.position.set(
-
-cameraPosition.x,
-
-cameraPosition.y,
-
-cameraPosition.z);
-
-this.scene.add(this.camera);
-
-this.renderer = new THREE.WebGLRenderer({
-
-canvas,
-
-antialias: true });
-
-this.pixelRatio = Math.min(window.devicePixelRatio, 2);
-
-this.renderer.setPixelRatio(this.pixelRatio);
-
-this.renderer.setSize(this.width, this.height);
-
-this.timer = 0;
-
-this.addToScene();
-
-this.addButton();
-
-this.render();
-
-this.listenToResize();
-
-this.listenToMouseMove();
-
-}
-
-start() {}
-
-render() {
-
-this.renderer.render(this.scene, this.camera);
-
-this.composer && this.composer.render();
-
-}
-
-loop() {
-
-this.time.elapsed = this.clock.getElapsedTime();
-
-this.time.delta = Math.min(
-
-60,
-
-(this.time.current - this.time.elapsed) * 1000);
-
-if (this.analyser && this.isRunning) {
-
-this.time.t = this.time.elapsed - this.time.t0 + this.time.t1;
-
-this.data = this.analyser.getAverageFrequency();
-
-this.data *= this.data / 2000;
-
-this.angle.x += this.time.delta * 0.001 * 0.63;
-
-this.angle.z += this.time.delta * 0.001 * 0.39;
-
-const justFinished = this.isRunning && !this.sound.isPlaying;
-
-if (justFinished) {
-
-this.time.t1 = this.time.t;
-
-this.audioBtn.disabled = false;
-
-this.isRunning = false;
-
-const tl = gsap.timeline();
-
-this.angle.x = 0;
-
-this.angle.z = 0;
-
-tl.to(this.camera.position, {
-
-x: 0,
-
-z: 4.5,
-
-duration: 4,
-
-ease: "expo.in" });
-
-tl.to(this.audioBtn, {
-
-opacity: () => 1,
-
-duration: 1,
-
-ease: "power1.out" });
-
-} else {
-
-this.camera.position.x = Math.sin(this.angle.x) * this.parameters.a;
-
-this.camera.position.z = Math.min(
-
-Math.max(Math.cos(this.angle.z) * this.parameters.c, 1.75),
-
-6.5);
-
-}
-
-}
-
-this.camera.lookAt(this.scene.position);
-
-if (this.heartMaterial) {
-
-this.heartMaterial.uniforms.uTime.value +=
-
-this.time.delta * this.time.frequency * (1 + this.data * 0.2);
-
-}
-
-if (this.model) {
-
-this.model.rotation.y -= 0.0005 * this.time.delta * (1 + this.data);
-
-}
-
-if (this.snowMaterial) {
-
-this.snowMaterial.uniforms.uTime.value +=
-
-this.time.delta * 0.0004 * (1 + this.data);
-
-}
-
-this.render();
-
-this.time.current = this.time.elapsed;
-
-requestAnimationFrame(this.loop.bind(this));
-
-}
-
-listenToResize() {
-
-window.addEventListener("resize", () => {
-
-// Update sizes
-
-this.width = window.innerWidth;
-
-this.height = window.innerHeight;
-
-// Update camera
-
-this.camera.aspect = this.width / this.height;
-
-this.camera.updateProjectionMatrix();
-
-this.renderer.setSize(this.width, this.height);
-
-});
-
-}
-
-listenToMouseMove() {
-
-window.addEventListener("mousemove", e => {
-
-const x = e.clientX;
-
-const y = e.clientY;
-
-gsap.to(this.camera.position, {
-
-x: gsap.utils.mapRange(0, window.innerWidth, 0.2, -0.2, x),
-
-y: gsap.utils.mapRange(0, window.innerHeight, 0.2, -0.2, -y) });
-
-});
-
-}
-
-addHeart() {
-
-this.heartMaterial = new THREE.ShaderMaterial({
-
-fragmentShader: document.getElementById("fragmentShader").textContent,
-
-vertexShader: document.getElementById("vertexShader").textContent,
-
-uniforms: {
-
-uTime: { value: 0 },
-
-uSize: { value: 0.2 },
-
-uTex: {
-
-value: new THREE.TextureLoader().load(
-
-"https://assets.codepen.io/74321/heart.png") } },
-
-depthWrite: false,
-
-blending: THREE.AdditiveBlending,
-
-transparent: true });
-
-const count = this.parameters.count; //2000
-
-const scales = new Float32Array(count * 1);
-
-const colors = new Float32Array(count * 3);
-
-const speeds = new Float32Array(count);
-
-const randoms = new Float32Array(count);
-
-const randoms1 = new Float32Array(count);
-
-const colorChoices = [
-
-"white",
-
-"red",
-
-"pink",
-
-"crimson",
-
-"hotpink",
-
-"green",
-
-"aquamarine",
-
-"blue"];
-
-const squareGeometry = new THREE.PlaneGeometry(1, 1);
-
-this.instancedGeometry = new THREE.InstancedBufferGeometry();
-
-Object.keys(squareGeometry.attributes).forEach(attr => {
-
-this.instancedGeometry.attributes[attr] = squareGeometry.attributes[attr];
-
-});
-
-this.instancedGeometry.index = squareGeometry.index;
-
-this.instancedGeometry.maxInstancedCount = count;
-
-for (let i = 0; i < count; i++) {
-
-const phi = Math.random() * Math.PI * 2;
-
-const i3 = 3 * i;
-
-randoms[i] = Math.random();
-
-randoms1[i] = Math.random();
-
-scales[i] = Math.random() * 0.35;
-
-const colorIndex = Math.floor(Math.random() * colorChoices.length);
-
-const color = new THREE.Color(colorChoices[colorIndex]);
-
-colors[i3 + 0] = color.r;
-
-colors[i3 + 1] = color.g;
-
-colors[i3 + 2] = color.b;
-
-speeds[i] = Math.random() * this.parameters.max;
-
-}
-
-this.instancedGeometry.setAttribute(
-
-"random",
-
-new THREE.InstancedBufferAttribute(randoms, 1, false));
-
-this.instancedGeometry.setAttribute(
-
-"random1",
-
-new THREE.InstancedBufferAttribute(randoms1, 1, false));
-
-this.instancedGeometry.setAttribute(
-
-"aScale",
-
-new THREE.InstancedBufferAttribute(scales, 1, false));
-
-this.instancedGeometry.setAttribute(
-
-"aSpeed",
-
-new THREE.InstancedBufferAttribute(speeds, 1, false));
-
-this.instancedGeometry.setAttribute(
-
-"aColor",
-
-new THREE.InstancedBufferAttribute(colors, 3, false));
-
-this.heart = new THREE.Mesh(this.instancedGeometry, this.heartMaterial);
-
-console.log(this.heart);
-
-this.scene.add(this.heart);
-
-}
-
-addToScene() {
-
-this.addModel();
-
-this.addHeart();
-
-this.addSnow();
-
-}
-
-async addModel() {
-
-this.model = await this.loadObj(
-
-"https://assets.codepen.io/74321/heart.glb");
-
-this.model.scale.set(0.01, 0.01, 0.01);
-
-this.model.material = new THREE.MeshMatcapMaterial({
-
-matcap: this.textureLoader.load(
-
-"https://assets.codepen.io/74321/3.png",
-
-() => {
-
-gsap.to(this.model.scale, {
-
-x: 0.35,
-
-y: 0.35,
-
-z: 0.35,
-
-duration: 1.5,
-
-ease: "Elastic.easeOut" });
-
-}),
-
-color: "#fff" });
-
-this.scene.add(this.model);
-
-}
-
-addButton() {
-
-this.audioBtn = document.querySelector("button");
-
-this.audioBtn.addEventListener("click", () => {
-
-this.audioBtn.disabled = true;
-
-if (this.analyser) {
-
-this.sound.play();
-
-this.time.t0 = this.time.elapsed;
-
-this.data = 0;
-
-this.isRunning = true;
-
-gsap.to(this.audioBtn, {
-
-opacity: 0,
-
-duration: 1,
-
-ease: "power1.out" });
-
-} else {
-
-this.loadMusic().then(() => {
-
-console.log("music loaded");
-
-});
-
-}
-
-});
-
-}
-
-loadObj(path) {
-
-const loader = new GLTFLoader();
-
-return new Promise(resolve => {
-
-loader.load(
-
-path,
-
-response => {
-
-resolve(response.scene.children[0]);
-
-},
-
-xhr => {},
-
-err => {
-
-console.log(err);
-
-});
-
-});
-
-}
-
-loadMusic() {
-
-return new Promise(resolve => {
-
-const listener = new THREE.AudioListener();
-
-this.camera.add(listener);
-
-// create a global audio source
-
-this.sound = new THREE.Audio(listener);
-
-const audioLoader = new THREE.AudioLoader();
-
-audioLoader.load(
-
-"https://res.cloudinary.com/dmnxeusyw/video/upload/v1668310333/sharecs.net/music_ji3iak.mp3",
-
-buffer => {
-
-this.sound.setBuffer(buffer);
-
-this.sound.setLoop(false);
-
-this.sound.setVolume(0.5);
-
-this.sound.play();
-
-this.analyser = new THREE.AudioAnalyser(this.sound, 32);
-
-// get the average frequency of the sound
-
-const data = this.analyser.getAverageFrequency();
-
-this.isRunning = true;
-
-this.t0 = this.time.elapsed;
-
-resolve(data);
-
-},
-
-progress => {
-
-gsap.to(this.audioBtn, {
-
-opacity: () => 1 - progress.loaded / progress.total,
-
-duration: 1,
-
-ease: "power1.out" });
-
-},
-
-error => {
-
-console.log(error);
-
-});
-
-});
-
-}
-
-addSnow() {
-
-this.snowMaterial = new THREE.ShaderMaterial({
-
-fragmentShader: document.getElementById("fragmentShader1").textContent,
-
-vertexShader: document.getElementById("vertexShader1").textContent,
-
-uniforms: {
-
-uTime: { value: 0 },
-
-uSize: { value: 0.3 },
-
-uTex: {
-
-value: new THREE.TextureLoader().load(
-
-"https://assets.codepen.io/74321/heart.png") } },
-
-depthWrite: false,
-
-blending: THREE.AdditiveBlending,
-
-transparent: true });
-
-const count = 550;
-
-const scales = new Float32Array(count * 1);
-
-const colors = new Float32Array(count * 3);
-
-const phis = new Float32Array(count);
-
-const randoms = new Float32Array(count);
-
-const randoms1 = new Float32Array(count);
-
-const colorChoices = ["red", "pink", "hotpink", "green", "aquamarine", "blue"];
-
-const squareGeometry = new THREE.PlaneGeometry(1, 1);
-
-this.instancedGeometry = new THREE.InstancedBufferGeometry();
-
-Object.keys(squareGeometry.attributes).forEach(attr => {
-
-this.instancedGeometry.attributes[attr] = squareGeometry.attributes[attr];
-
-});
-
-this.instancedGeometry.index = squareGeometry.index;
-
-this.instancedGeometry.maxInstancedCount = count;
-
-for (let i = 0; i < count; i++) {
-
-const phi = (Math.random() - 0.5) * 10;
-
-const i3 = 3 * i;
-
-phis[i] = phi;
-
-randoms[i] = Math.random();
-
-randoms1[i] = Math.random();
-
-scales[i] = Math.random() * 0.35;
-
-const colorIndex = Math.floor(Math.random() * colorChoices.length);
-
-const color = new THREE.Color(colorChoices[colorIndex]);
-
-colors[i3 + 0] = color.r;
-
-colors[i3 + 1] = color.g;
-
-colors[i3 + 2] = color.b;
-
-}
-
-this.instancedGeometry.setAttribute(
-
-"phi",
-
-new THREE.InstancedBufferAttribute(phis, 1, false));
-
-this.instancedGeometry.setAttribute(
-
-"random",
-
-new THREE.InstancedBufferAttribute(randoms, 1, false));
-
-this.instancedGeometry.setAttribute(
-
-"random1",
-
-new THREE.InstancedBufferAttribute(randoms1, 1, false));
-
-this.instancedGeometry.setAttribute(
-
-"aScale",
-
-new THREE.InstancedBufferAttribute(scales, 1, false));
-
-this.instancedGeometry.setAttribute(
-
-"aColor",
-
-new THREE.InstancedBufferAttribute(colors, 3, false));
-
-this.snow = new THREE.Mesh(this.instancedGeometry, this.snowMaterial);
-
-this.scene.add(this.snow);
-
-}}
-
-const world = new World({
-
-canvas: document.querySelector("canvas.webgl"),
-
-cameraPosition: { x: 0, y: 0, z: 4.5 } });
-
-world.loop();
-
-//# sourceURL=pen.js
-
-</script>
-
+<body>
+  <canvas id="stage"></canvas>
+
+  <script>
+    // Thiết lập ban đầu
+    const BASE_W = 1300;
+    const BASE_H = 800;
+
+    const canvas = document.getElementById('stage');
+    const ctx = canvas.getContext('2d');
+
+    // Cấu hình fonts (sẽ được điều chỉnh theo kích thước màn hình)
+    let fontMain = "bold 80px Arial";
+
+    // Lyrics dữ liệu
+    const lyrics = [
+      ["Gio nay mat troi cua em da la ai", 0.35, 0.8],
+      ["Vi gio nay trong trai tim em la anh", 0.3, 0.5],
+      ["Va roi nguoi co thay khong", 0.35, 0.5],
+      ["You are tired", 0.2, 0.6],
+      ["Sao cu quan quanh mai trong tam tri em", 0.33, 0.8],
+      ["Ke tu ngay anh den day tim em vun vo", 0.25, 0.7],
+      ["Chot nhiu lan om lay anh tinh giac lai mo", 0.25, 0.5],
+      ["Va roi nguoi co the cho", 0.3, 0.7],
+      ["Hay co thay gio", 0.1, 0.8],
+      ["Trai tim em lac roi noi nao", 0.3, 0.8],
+    ];
+
+    const BLACK = "#000000";
+    const WHITE = "#e6e6e6";
+    const LOGO_COLOR = "#b4b4b4";
+    const CIRCLE_COLORS = [
+      "rgba(255,255,255,0.31)",
+      "rgba(200,0,0,0.31)",
+      "rgba(150,150,150,0.31)"
+    ];
+
+    // NoiseSpot miễn phí
+    class NoiseSpot {
+      constructor() { this.reset(); }
+      reset() {
+        this.x = Math.floor(Math.random() * WIDTH);
+        this.y = Math.floor(Math.random() * HEIGHT);
+        this.size = Math.floor(Math.random() * 6) + 3;
+        const gray = Math.floor(Math.random() * 101) + 80;
+        this.color = `rgb(${gray},${gray},${gray})`;
+        this.lifetime = Math.random() * 0.3 + 0.3;
+        this.birth = performance.now() / 1000;
+      }
+      draw(ctx) {
+        const now = performance.now() / 1000;
+        if (now - this.birth > this.lifetime) this.reset();
+        ctx.fillStyle = this.color;
+        ctx.fillRect(this.x, this.y, this.size, this.size);
+      }
+    }
+
+    let WIDTH = BASE_W;
+    let HEIGHT = BASE_H;
+
+    // Các biến quản lý trạng thái
+    let lineIndex = 0;
+    let wordIndex = 0;
+    let lastWordTime = performance.now() / 1000;
+    let lastCircleTime = performance.now() / 1000;
+
+    const noises = Array.from({ length: 60 }, () => new NoiseSpot());
+    const circles = [];
+
+    function wrapText(words, font, maxWidth) {
+      ctx.font = font;
+      const lines = [];
+      let current = [];
+      for (let w of words) {
+        const testLine = current.length ? current.join(' ') + ' ' + w : w;
+        const wpx = ctx.measureText(testLine).width;
+        if (wpx <= maxWidth) {
+          current.push(w);
+        } else {
+          lines.push(current);
+          current = [w];
+        }
+      }
+      if (current.length) lines.push(current);
+      return lines;
+    }
+
+    function addCircle() {
+      const x = WIDTH / 2;
+      const y = HEIGHT / 2;
+      const color = Math.floor(Math.random() * 3);
+      circles.push({ x, y, r: 0, color });
+    }
+
+    // Logo font cho màn hình càng lớn càng tốt
+    const logoFontFamily = "Courier New";
+
+    // Điều chỉnh kích thước và vị trí khi resize
+    function resize() {
+      // Sử dụng kích thước cửa sổ làm cơ sở
+      // Giữ tỉ lệ: scale so với BASE_W/BASE_H
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+
+      // Chọn tỷ lệ scale sao cho vừa khít khung hình mà vẫn giữ tỉ lệ
+      const scaleX = w / BASE_W;
+      const scaleY = h / BASE_H;
+      const scale = Math.max(0.5, Math.min(scaleX, scaleY)); // giới hạn để chữ vẫn nhìn được
+
+      // Cập nhật kích thước canvas và vị trí
+      WIDTH = Math.floor(BASE_W * scale);
+      HEIGHT = Math.floor(BASE_H * scale);
+      canvas.width = WIDTH;
+      canvas.height = HEIGHT;
+
+      // Cập nhật font dựa trên scale (đảm bảo chữ vừa mắt)
+      const baseFontSize = Math.max(28, Math.floor(80 * scale)); // tối thiểu 28px
+      fontMain = `bold ${baseFontSize}px Arial`;
+
+      // Logo size vừa với scale
+      // Để đơn giản, không thay đổi fontFamily, chỉ thay kích thước từ CSS-Canvas
+      // Các tham số khác có thể được tính dựa trên WIDTH/HEIGHT nếu cần
+
+      // Cập nhật vị trí các phần mềm hình ảnh khác nếu có
+    }
+
+    window.addEventListener('resize', resize);
+    // Khởi tạo lần đầu
+    resize();
+
+    // Scanlines
+    function drawScanlines(ctx) {
+      ctx.save();
+      for (let y = 0; y < HEIGHT; y += 4) {
+        ctx.strokeStyle = "rgba(0,0,0,0.0)"; // có thể bỏ nếu muốn có hiệu ứng nhẹ
+      }
+      ctx.restore();
+    }
+
+    // Main loop
+    let running = true;
+    let lastFrame = performance.now();
+    function loop() {
+      if (!running) return;
+      const now = performance.now();
+      const dt = (now - lastFrame) / 1000;
+      lastFrame = now;
+
+      update(dt);
+      render();
+
+      requestAnimationFrame(loop);
+    }
+
+    function update(dt) {
+      const currentTime = performance.now() / 1000;
+
+      // Lyrics progression
+      if (lineIndex < lyrics.length) {
+        const [line, wordDelay, lineDelay] = lyrics[lineIndex];
+        const words = line.split(" ");
+
+        if (currentTime - lastWordTime > wordDelay && wordIndex < words.length) {
+          wordIndex += 1;
+          lastWordTime = currentTime;
+        }
+
+        // Khi hoàn thành từ cho dòng hiện tại, chuyển sang dòng tiếp theo sau lineDelay
+        if (wordIndex === words.length) {
+          if (currentTime - lastWordTime > lineDelay) {
+            lineIndex += 1;
+            wordIndex = 0;
+            lastWordTime = currentTime;
+          }
+        }
+      }
+
+      // Thêm vòng tròn theo thời gian
+      if (currentTime - lastCircleTime > 0.6) {
+        addCircle();
+        lastCircleTime = currentTime;
+      }
+
+      // Cập nhật các vòng tròn
+      for (let i = circles.length - 1; i >= 0; i--) {
+        const c = circles[i];
+        c.r += 5;
+        if (c.r > 600) circles.splice(i, 1);
+      }
+    }
+
+    function render() {
+      // Nền đen
+      ctx.fillStyle = BLACK;
+      ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+      // Lyrics hiện tại
+      if (lineIndex < lyrics.length) {
+        const [line, wordDelay, lineDelay] = lyrics[lineIndex];
+        const words = line.split(" ");
+        const visibleWords = words.slice(0, wordIndex);
+
+        // Wrap và vẽ
+        const wrapped = wrapText(visibleWords, fontMain, WIDTH * 0.6);
+        const yStart = HEIGHT / 2;
+        ctx.font = fontMain;
+        ctx.textAlign = "center";
+        ctx.fillStyle = WHITE;
+
+        for (let row = 0; row < wrapped.length; row++) {
+          const lineWords = wrapped[row].join(' ');
+          const y = yStart + row * Math.max(60, Math.floor(fontMain.match(/\d+/)?.[0] || 60));
+          ctx.fillText(lineWords, WIDTH / 2, y);
+        }
+
+        // Chuyển sang dòng tiếp theo khi hoàn tất từ
+        if (wordIndex === words.length) {
+          if ((performance.now() / 1000) - lastWordTime > lineDelay) {
+            lineIndex += 1;
+            wordIndex = 0;
+            lastWordTime = performance.now() / 1000;
+          }
+        }
+      }
+
+      // Vòng tròn động
+      for (const c of circles) {
+        ctx.save();
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = CIRCLE_COLORS[c.color % CIRCLE_COLORS.length];
+        ctx.beginPath();
+        ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      // Logo dưới góc phải (tương tự Pygame)
+      ctx.save();
+      const logoFontSize = Math.max(12, Math.floor(20 * (WIDTH / BASE_W)));
+      ctx.font = `${logoFontSize}px "${logoFontFamily}"`;
+      ctx.fillStyle = LOGO_COLOR;
+      const logoText = "         hphuc ";
+      const x = WIDTH - Math.max(100, Math.floor(700 * (WIDTH / BASE_W)));
+      const y = HEIGHT - Math.max(5, Math.floor(15 * (HEIGHT / BASE_H)));
+      ctx.fillText(logoText, x, y);
+      ctx.restore();
+
+      // Noise spots
+      for (const n of noises) n.draw(ctx);
+
+      // Scanlines (đơn giản)
+      drawScanlines(ctx);
+    }
+
+    // Bắt đầu vòng lặp
+    loop();
+
+    // Clean up khi rời trang
+    window.addEventListener('beforeunload', () => { running = false; });
+
+  </script>
 </body>
-
 </html>
